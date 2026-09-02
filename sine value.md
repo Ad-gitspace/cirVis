@@ -1,3 +1,5 @@
+<!-- md view of original Document (Less priority as may contains error)-->
+
 ## Chapter 7 
 
 ## Derivation of Sines 
