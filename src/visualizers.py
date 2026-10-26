@@ -38,6 +38,100 @@ COLOR_BG = "rgba(17, 24, 39, 0.95)"
 COLOR_GRID = "rgba(255, 255, 255, 0.1)"
 
 
+def plot_chapter_proof(section: str, r: float = RADIUS_EXACT) -> go.Figure:
+    """Draw a focused geometric/sequence sketch for a Chapter 7 proof."""
+    fig = go.Figure()
+    theta = np.linspace(0, 2 * np.pi, 360)
+
+    if section == "7.1–7.2 | Hexagon and Rsine geometry":
+        vertex_angles = np.pi / 6 + np.arange(6) * np.pi / 3
+        points = np.column_stack((r * np.cos(vertex_angles), r * np.sin(vertex_angles)))
+        closed = np.vstack((points, points[0]))
+        fig.add_trace(go.Scatter(x=closed[:, 0], y=closed[:, 1], mode="lines+markers", name="Inscribed regular hexagon", line=dict(color=COLOR_PRIMARY, width=3), marker=dict(size=8)))
+        x30, y30 = r * math.cos(math.pi / 6), r * math.sin(math.pi / 6)
+        fig.add_trace(go.Scatter(x=[0, x30], y=[0, y30], mode="lines+markers+text", text=["O", "P (30°)"], textposition="top center", name="Radius r", line=dict(color=COLOR_ACCENT, width=2)))
+        fig.add_trace(go.Scatter(x=[x30, x30], y=[-y30, y30], mode="lines", name="60° chord = r", line=dict(color=COLOR_GREEN, width=3)))
+        fig.add_trace(go.Scatter(x=[x30, x30], y=[0, y30], mode="lines+markers+text", text=["", "Jyā = r/2"], textposition="middle right", name="Half-chord: Rsine 30°", line=dict(color=COLOR_SECONDARY, width=4, dash="dash")))
+        title = "A 60° chord equals the radius; its half-chord gives R sin 30° = r/2"
+        extent = r * 1.25
+    elif section == "7.3 | Quadrants and sine/cosine signs":
+        fig.add_trace(go.Scatter(x=r * np.cos(theta), y=r * np.sin(theta), mode="lines", name="Circle", line=dict(color="#94A3B8")))
+        for deg in (45, 135, 225, 315):
+            a = math.radians(deg)
+            x, y = r * math.cos(a), r * math.sin(a)
+            fig.add_trace(go.Scatter(x=[0, x], y=[0, y], mode="lines+markers", name=f"{deg}°", line=dict(color=COLOR_PURPLE, width=2)))
+            fig.add_annotation(x=x * 1.18, y=y * 1.18, text=f"Q{(deg - 1) // 90 + 1}: sin {y/r:+.1f}, cos {x/r:+.1f}", showarrow=False, font=dict(color="#E5E7EB", size=11))
+        title = "Signs follow the north/south and east/west projections"
+        extent = r * 1.42
+    elif section == "7.7 | Square of the Rsine":
+        angle = math.radians(55)
+        x, y = r * math.cos(angle), r * math.sin(angle)
+        fig.add_trace(go.Scatter(x=[0, x, 0, 0], y=[0, 0, y, 0], mode="lines+markers+text", text=["O", "K", "A", ""], textposition="top center", name="Right triangle", fill="toself", fillcolor="rgba(0,212,255,0.10)", line=dict(color=COLOR_PRIMARY, width=3)))
+        fig.add_trace(go.Scatter(x=[0, x], y=[0, y], mode="lines", name="Radius r", line=dict(color=COLOR_ACCENT, width=3)))
+        fig.add_annotation(x=x / 2, y=-r * .1, text="Rcos(s)", showarrow=False, font=dict(color=COLOR_ACCENT))
+        fig.add_annotation(x=-r * .1, y=y / 2, text="Rsin(s)", showarrow=False, textangle=-90, font=dict(color=COLOR_SECONDARY))
+        title = "Pythagoras on the radius: (R sin s)² + (R cos s)² = r²"
+        extent = r * 1.2
+    elif section == "7.9 | Area of a triangle":
+        a = (0, 0); b = (r, 0); c = (r * .68, r * .72); foot = (c[0], 0)
+        fig.add_trace(go.Scatter(x=[a[0], b[0], c[0], a[0]], y=[a[1], b[1], c[1], a[1]], mode="lines+markers+text", text=["A", "B", "C", ""], textposition="top center", fill="toself", fillcolor="rgba(155,93,229,.12)", name="Triangle ABC", line=dict(color=COLOR_PRIMARY, width=3)))
+        fig.add_trace(go.Scatter(x=[foot[0], foot[0]], y=[0, c[1]], mode="lines+markers+text", text=["", "H"], textposition="middle right", name="Altitude h", line=dict(color=COLOR_SECONDARY, dash="dash", width=3)))
+        fig.add_annotation(x=r/2, y=-r*.1, text="Base b", showarrow=False)
+        fig.add_annotation(x=r*.8, y=r*.5, text="Area = ½ b h", showarrow=False, font=dict(color=COLOR_ACCENT, size=15))
+        title = "The same triangle area is half the base times its perpendicular height"
+        extent = r * 1.2
+    elif section == "7.11 | Cyclic proof of angle addition":
+        a1, a2 = math.radians(35), math.radians(70)
+        fig.add_trace(go.Scatter(x=r * np.cos(theta), y=r * np.sin(theta), mode="lines", name="Circumcircle", line=dict(color="#94A3B8")))
+        pts = [(r*math.cos(v), r*math.sin(v)) for v in (0, a1, a1+a2)]
+        for i, (x, y) in enumerate(pts):
+            fig.add_trace(go.Scatter(x=[0, x], y=[0, y], mode="lines+markers", name=["First arc", "Intermediate radius", "Combined arc"][i], line=dict(color=[COLOR_ACCENT, COLOR_PURPLE, COLOR_SECONDARY][i], width=2)))
+        fig.add_trace(go.Scatter(x=[p[0] for p in pts], y=[p[1] for p in pts], mode="markers+text", text=["E", "A₁", "A₂"], textposition="top center", showlegend=False))
+        title = "The cyclic-quadrilateral diagonals encode the sine of a sum"
+        extent = r * 1.2
+    elif section == "7.12 | Tabular Rsines without the radius":
+        indices = np.arange(1, 25)
+        vals = np.array([r * math.sin(j * ARC_BIT_ALPHA / r) for j in range(25)])
+        first = np.diff(vals)
+        second = first[:-1] - first[1:]
+        fig.add_trace(go.Scatter(x=indices, y=vals[1:], mode="lines+markers", name="Rsines Bⱼ", line=dict(color=COLOR_PRIMARY, width=3)))
+        fig.add_trace(go.Scatter(x=indices, y=first, mode="lines+markers", name="First differences Δⱼ", yaxis="y2", line=dict(color=COLOR_ACCENT, width=2)))
+        fig.add_trace(go.Scatter(x=indices[1:-1], y=second, mode="lines+markers", name="Second differences", yaxis="y2", line=dict(color=COLOR_SECONDARY, width=2, dash="dash")))
+        fig.update_layout(yaxis2=dict(title="First/second difference", overlaying="y", side="right", showgrid=False))
+        title = "Successive equal arc-bits create a second-difference recurrence"
+        fig.update_layout(xaxis_title="Arc-bit index j", yaxis_title="Length (arcminutes)")
+        fig.update_layout(template="plotly_dark")
+        fig.update_layout(paper_bgcolor=COLOR_BG, plot_bgcolor=COLOR_BG, font=dict(color="#E5E7EB"), height=480)
+        return fig
+    elif section == "7.13 | Altitude and circum-diameter":
+        pts = {"A": (0, r*.72), "B": (-r*.85, 0), "C": (r*.85, 0)}
+        fig.add_trace(go.Scatter(x=[pts[k][0] for k in ("A", "B", "C", "A")], y=[pts[k][1] for k in ("A", "B", "C", "A")], mode="lines+markers+text", text=["A", "B", "C", ""], textposition="top center", fill="toself", fillcolor="rgba(0,212,255,.08)", name="Triangle"))
+        fig.add_trace(go.Scatter(x=[0, 0], y=[0, pts["A"][1]], mode="lines+markers", name="Altitude h", line=dict(color=COLOR_SECONDARY, width=3, dash="dash")))
+        fig.add_trace(go.Scatter(x=[-r*.85, r*.85], y=[0, 0], mode="lines", name="Opposite side a", line=dict(color=COLOR_ACCENT, width=3)))
+        fig.add_annotation(x=0, y=-r*.15, text="For an inscribed triangle: a = 2R sin A", showarrow=False, font=dict(color=COLOR_ACCENT, size=14))
+        title = "Chord, altitude, and circumradius connect through the inscribed angle"
+        extent = r * 1.2
+    elif section == "7.17 | Solving the shadow problem":
+        h = r * .48; base = r
+        fig.add_trace(go.Scatter(x=[0, base, base, 0], y=[0, 0, h, 0], mode="lines+markers+text", text=["Foot 1", "Foot 2", "Lamp", ""], textposition="top center", name="Shadow triangle", fill="toself", fillcolor="rgba(255,107,107,.10)", line=dict(color=COLOR_PRIMARY, width=3)))
+        fig.add_trace(go.Scatter(x=[0, base], y=[0, h], mode="lines", name="Shadow hypotenuse", line=dict(color=COLOR_ACCENT, width=2, dash="dash")))
+        fig.add_annotation(x=base/2, y=-h*.16, text="Shadow difference", showarrow=False)
+        title = "Similar-triangle and square-difference relations recover unknown shadows"
+        extent = r * 1.2
+    elif section == "7.19.1 | Area of a circle":
+        a = np.linspace(0, np.pi, 120)
+        fig.add_trace(go.Scatter(x=r*np.cos(a), y=r*np.sin(a), mode="lines", name="Semicircle", line=dict(color=COLOR_PRIMARY, width=3), fill="toself", fillcolor="rgba(0,212,255,.08)"))
+        fig.add_trace(go.Scatter(x=r*np.cos(a), y=-r*np.sin(a), mode="lines", name="Semicircle", line=dict(color=COLOR_PURPLE, width=3), fill="toself", fillcolor="rgba(155,93,229,.08)"))
+        fig.add_annotation(x=0, y=r*.5, text="Rearranged sectors form a rectangle\nArea = ½ × circumference × radius", showarrow=False, font=dict(color=COLOR_ACCENT, size=14))
+        title = "Rearranging many circle sectors gives area = ½Cr"
+        extent = r * 1.2
+    else:
+        raise ValueError(f"Unknown Chapter 7 proof section: {section}")
+
+    fig.update_layout(title=title, xaxis=dict(range=[-extent, extent], zeroline=False, gridcolor=COLOR_GRID), yaxis=dict(range=[-extent, extent], scaleanchor="x", scaleratio=1, zeroline=False, gridcolor=COLOR_GRID), paper_bgcolor=COLOR_BG, plot_bgcolor=COLOR_BG, font=dict(color="#E5E7EB"), legend=dict(orientation="h", y=-0.18), margin=dict(l=30, r=30, t=65, b=60), height=480)
+    return fig
+
+
 def plot_trig_circle(
     s1_min: float,
     s2_min: Optional[float] = None,

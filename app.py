@@ -4,6 +4,7 @@ Interactive Simulation & Mathematical Computing Suite in Streamlit
 """
 
 import math
+from pathlib import Path
 import streamlit as st
 import pandas as pd
 import numpy as np
@@ -42,6 +43,7 @@ from src.engine_sphere import (
 )
 from src.visualizers import (
     plot_trig_circle,
+    plot_chapter_proof,
     plot_sankalita_convergence,
     plot_cyclic_quadrilateral,
     plot_sphere_dissection_3d,
@@ -50,7 +52,7 @@ from src.visualizers import (
 
 # Page configuration
 st.set_page_config(
-    page_title="Kerala Mathematics: Yuktibhāṣā Simulation Suite",
+    page_title="Kerala Mathematics: Yuktibhāṣā Explorer",
     page_icon="📐",
     layout="wide",
     initial_sidebar_state="expanded",
@@ -121,23 +123,36 @@ st.sidebar.markdown("---")
 st.sidebar.markdown("### 📚 Historical Context")
 st.sidebar.info(
     "**Yuktibhāṣā (c. 1530 CE)** by *Jyeṣṭhadeva*\n\n"
-    "Rationales for the Kerala School discoveries (Mādhava of Saṅgamagrāma, Nīlakaṇṭha Somayājī, Parameśvara):\n"
-    "- 24 Tabular Sines (*Paṭhita-jyā*)\n"
-    "- Infinite Series via *Saṅkalita* (Pre-Newton/Leibniz Calculus)\n"
-    "- Cyclic Quadrilateral 3 Diagonals & Circum-Radius\n"
-    "- Spherical Slicing Integration"
+    "Explore the proofs and methods of the Kerala School:\n"
+    "- 24 tabular Rsines (*paṭhita-jyā*)\n"
+    "- Repeated summation and Madhava series\n"
+    "- Cyclic quadrilaterals and sphere slicing"
 )
 
-# Header Section
-st.markdown('<div class="main-header">Kerala School of Mathematics Simulation Suite</div>', unsafe_allow_html=True)
-st.markdown('<div class="sub-header">Interactive 2D/3D Mathematical Visualization & Computing Platform based on <b>Yuktibhāṣā (Chapter 7: Derivation of Sines)</b></div>', unsafe_allow_html=True)
+# Optional local reference supplied with the project brief.
+reference_pdf = Path(__file__).parent / "assets" / "sine-value-reference.pdf"
+if reference_pdf.exists():
+    st.sidebar.markdown("### 📄 Chapter 7 source")
+    st.sidebar.caption("The supplied Yuktibhāṣā reference is bundled with this dashboard.")
+    st.sidebar.download_button(
+        "Download the source PDF",
+        data=reference_pdf.read_bytes(),
+        file_name="sine-value-reference.pdf",
+        mime="application/pdf",
+        use_container_width=True,
+    )
 
-# 4 Main Tabs
-tab1, tab2, tab3, tab4 = st.tabs([
-    "📐 1. 24 Tabular Sines & Trigonometry",
-    "♾️ 2. Calculus via Saṅkalita (Madhava Series)",
-    "🔷 3. Cyclic Quadrilaterals (Brahmagupta & Mādhava)",
-    "🌐 4. 3D Sphere Pre-Calculus Integration"
+# Header Section
+st.markdown('<div class="main-header">Kerala Mathematics: Derivation of Sines</div>', unsafe_allow_html=True)
+st.markdown('<div class="sub-header">An interactive guide to the geometry, calculations, and proofs in <b>Yuktibhāṣā, Chapter 7</b>.</div>', unsafe_allow_html=True)
+
+# Main sections
+tab1, tab2, tab3, tab4, tab5 = st.tabs([
+    "📐 1. Tabular sines",
+    "∑ 2. Saṅkalita series",
+    "◇ 3. Cyclic quadrilaterals",
+    "🌐 4. Sphere slicing",
+    "📖 5. Proof explorer",
 ])
 
 # ---------------------------------------------------------
@@ -212,6 +227,17 @@ with tab1:
             st.plotly_chart(fig_trig, use_container_width=True)
 
     with sub_tab2:
+        with st.expander("How the ancient table is constructed"):
+            st.markdown(
+                "The source chapter starts with a circle whose circumference is "
+                "$21,600'$ and divides the first quadrant into 24 equal arc-bits. "
+                "Therefore each table step is $\\alpha = 5400'/24 = 225'$. "
+                "Known 30° and 45° values, half-arc relations, and complementary "
+                "arcs generate the remaining tabular Rsines."
+            )
+            st.latex(r"R\sin(s/2) = \frac{1}{2}\sqrt{(R\sin s)^2 + (R\operatorname{vers}s)^2}")
+            st.markdown("The table below also includes a modern floating-point check.")
+
         st.markdown("#### The 24 Canonical Tabular Rsines (*Paṭhita-jyā*) of Kerala Astronomy")
         st.caption("Each step is $\\alpha = 225' = 3^\\circ 45'$. Tabulated up to $90^\\circ$ ($5400'$).")
         df_24 = compute_24_tabular_rsines(r=current_radius)
@@ -260,6 +286,15 @@ with tab1:
 # TAB 2: Calculus via Saṅkalita (Madhava Series)
 # ---------------------------------------------------------
 with tab2:
+    with st.expander("Ancient derivation: from arc-bits to Madhava's series"):
+        st.markdown(
+            "The chapter approximates an arc by many small pieces. For total arc "
+            "$s$ and $n$ partitions, $B_j \\approx js/n$. Repeatedly summing these "
+            "small changes produces the successive Rsine corrections."
+        )
+        st.latex(r"V_n^{(1)} = \sum_{j=1}^{n}j = \frac{n(n+1)}{2} \approx \frac{n^2}{2}")
+        st.latex(r"R\sin(s) \approx s - \frac{s^3}{3!r^2} + \frac{s^5}{5!r^4} - \frac{s^7}{7!r^6} + \cdots")
+
     st.markdown("### 2. Derivation of Power Series via Saṅkalita (Repeated Summations)")
     
     sc1, sc2 = st.columns([1, 1.4])
@@ -295,6 +330,14 @@ with tab2:
 # TAB 3: Cyclic Quadrilaterals
 # ---------------------------------------------------------
 with tab3:
+    with st.expander("Worked historical example: Lilavati 171"):
+        st.markdown(
+            "For consecutive sides $75, 40, 51, 68$, the semi-perimeter is "
+            "$s=117$. The preset below reproduces the historical check: "
+            "diagonals $(x,y,z)=(77,85,84)$, area $A=3234$, and circumradius "
+            "$r=42.5$."
+        )
+
     st.markdown("### 3. Cyclic Quadrilateral Mechanics (Brahmagupta, Mādhava & Parameśvara)")
     
     qc1, qc2 = st.columns([1, 1.4])
@@ -371,6 +414,15 @@ with tab3:
 # TAB 4: 3D Sphere Slicing & Pre-Calculus Integration
 # ---------------------------------------------------------
 with tab4:
+    with st.expander("Ancient slicing idea"):
+        st.markdown(
+            "The sphere is divided into many thin slices. Unrolling each circular "
+            "strip gives a surface-area contribution; averaging disk areas gives "
+            "the volume contribution. Increasing $N$ makes the sums converge."
+        )
+        st.latex(r"S_N = \sum_j \left(\frac{C}{r}\right)B_j\Delta \to 4\pi r^2")
+        st.latex(r"V_N = \frac{1}{2}\sum_j \left(\frac{C}{r}\right)B_j^2\Delta \to \frac{4}{3}\pi r^3")
+
     st.markdown("### 4. Surface Area & Volume of Sphere via Pre-Calculus Slicing (Yuktibhāṣā 7.18 - 7.19)")
     
     spc1, spc2 = st.columns([1, 1.4])
@@ -416,3 +468,105 @@ with tab4:
     st.markdown("#### Convergence Analysis Table ($N = 5 \\dots 1000$)")
     df_conv = generate_sphere_convergence_data(sp_r)
     st.dataframe(df_conv, use_container_width=True, hide_index=True)
+
+# ---------------------------------------------------------
+# TAB 5: Proof explorer for the remaining source subsections
+# ---------------------------------------------------------
+with tab5:
+    st.markdown("### Read the geometry behind the formulas")
+    st.markdown(
+        "Choose a proof from Chapter 7 to see its geometric construction beside "
+        "the derivation. The four simulation tabs above cover the tabular/interpolated "
+        "sines, Saṅkalita series, cyclic quadrilateral calculations, and sphere sums. "
+        "This explorer fills in the additional geometric arguments from the source."
+    )
+    proof_sections = [
+        "7.1–7.2 | Hexagon and Rsine geometry",
+        "7.3 | Quadrants and sine/cosine signs",
+        "7.7 | Square of the Rsine",
+        "7.9 | Area of a triangle",
+        "7.11 | Cyclic proof of angle addition",
+        "7.12 | Tabular Rsines without the radius",
+        "7.13 | Altitude and circum-diameter",
+        "7.17 | Solving the shadow problem",
+        "7.19.1 | Area of a circle",
+    ]
+    proof_notes = {
+        proof_sections[0]: (
+            "A chord subtending 60° is a side of an inscribed regular hexagon, so its length is the radius. "
+            "Bisecting that chord gives the half-chord used as the Rsine of 30°. The right triangle then "
+            "defines the complementary Rcosine and the versine arrow.",
+            r"R\sin 30^\circ=\frac r2,\qquad (R\sin s)^2+(R\cos s)^2=r^2,\qquad R\operatorname{vers}(s)=r-R\cos(s)",
+        ),
+        proof_sections[1]: (
+            "The Bhujā-cāpa is the signed north/south projection of a radius; the Koṭi-cāpa is its signed "
+            "east/west projection. Their signs change at the axes as the point moves through the four quadrants.",
+            r"R\sin(s)=r\sin(s/r),\qquad R\cos(s)=r\cos(s/r)",
+        ),
+        proof_sections[2]: (
+            "Drop perpendicular projections from a point on the circle to the east-west and north-south axes. "
+            "They form a right triangle whose hypotenuse is always the radius.",
+            r"(R\sin s)^2+(R\cos s)^2=r^2",
+        ),
+        proof_sections[3]: (
+            "A triangle and a parallelogram on the same base and between the same parallels have areas in the "
+            "ratio 1:2. This gives the familiar half-base-times-height rule used later for cyclic quadrilaterals.",
+            r"A_{\triangle}=\frac12 bh",
+        ),
+        proof_sections[4]: (
+            "Two intersecting chords of a cyclic quadrilateral encode the sum and difference of their intercepted "
+            "arcs. Applying the product-of-opposite-sides relation yields the sine and cosine addition identities.",
+            r"R\sin(s_1+s_2)=\frac{R\sin s_1R\cos s_2+R\cos s_1R\sin s_2}{r}",
+        ),
+        proof_sections[5]: (
+            "Equal arc-bits have equal chords. The adjacent sine and versine differences are therefore related by "
+            "similar right triangles; eliminating the radius yields a recurrence for tabulated Rsines.",
+            r"\Delta_j-\Delta_{j+1}=\left(\frac{\alpha}{r}\right)^2B_j,\qquad \Delta_j=B_j-B_{j-1}",
+        ),
+        proof_sections[6]: (
+            "For a chord of length a subtending an inscribed angle A, the perpendicular radius bisects the chord. "
+            "The resulting right triangle connects chord, altitude, and circumradius.",
+            r"a=2R\sin A,\qquad A_{\triangle}=\frac12 ah",
+        ),
+        proof_sections[7]: (
+            "The source compares two right triangles made by a lamp and two gnomon positions. The difference of "
+            "squared hypotenuses equals the difference of squared shadows; combining this with the fixed height "
+            "solves for both shadows.",
+            r"d_1+d_2=(c-b)\sqrt{1+\frac{4h^2}{(d_1-d_2)^2-(c-b)^2}}",
+        ),
+        proof_sections[8]: (
+            "Cut the circle into many narrow sectors and alternate them. As the sectors become thin, their outline "
+            "approaches a rectangle with height r and width half the circumference.",
+            r"A_{\circ}=\frac12Cr=\pi r^2",
+        ),
+    }
+    selected_proof = st.selectbox("Chapter subsection", proof_sections, key="proof_section")
+    note, equation = proof_notes[selected_proof]
+    proof_left, proof_right = st.columns([0.9, 1.1])
+    with proof_left:
+        st.markdown(f"**Derivation**\n\n{note}")
+        st.latex(equation)
+        if selected_proof.startswith("7.17"):
+            shadow_delta = st.number_input("Shadow difference d₁ − d₂", min_value=1.0, value=10.0, step=1.0)
+            hypotenuse_delta = st.number_input("Hypotenuse difference c − b", min_value=0.0, value=8.0, step=1.0)
+            gnomon_height = st.number_input("Gnomon height h", min_value=0.1, value=12.0, step=1.0)
+            denominator = shadow_delta**2 - hypotenuse_delta**2
+            if denominator <= 0:
+                st.warning("The shadow difference must exceed the hypotenuse difference for this construction.")
+            else:
+                shadow_sum = hypotenuse_delta * math.sqrt(1 + 4 * gnomon_height**2 / denominator)
+                d1 = (shadow_sum + shadow_delta) / 2
+                d2 = (shadow_sum - shadow_delta) / 2
+                if d2 < 0:
+                    st.warning("These differences imply a negative shorter shadow; adjust the inputs.")
+                else:
+                    st.metric("Recovered shadows (d₁, d₂)", f"{d1:.3f}, {d2:.3f}")
+    with proof_right:
+        st.plotly_chart(plot_chapter_proof(selected_proof, r=current_radius), use_container_width=True)
+
+    with st.expander("Chapter 7 coverage"):
+        st.markdown(
+            "**Interactive computation and visualization:** §§ 7.4.1–7.4.3, 7.5, 7.8, "
+            "7.10–7.11, 7.15, 7.18–7.19. **Proof explorer:** §§ 7.1–7.3, 7.7, 7.9, "
+            "7.11–7.13, 7.17, and 7.19.1. The source PDF is available from the sidebar."
+        )
